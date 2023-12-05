@@ -30,7 +30,7 @@ public class OrderService {
     }
 
     @CircuitBreaker(name = SERVICE_NAME, fallbackMethod = "onError")
-    public BaseResponse<Iterable<Product>> getAllProduct() {
+    public BaseResponse<?> getAllProduct() {
         ResponseEntity<Iterable<Product>> response = restTemplate.exchange(
                 PRODUCT_SERVICE_URL,
                 HttpMethod.GET,
@@ -40,12 +40,17 @@ public class OrderService {
         var body = response.getBody();
         var counter = new AtomicInteger(0);
 
-        if (response.getStatusCode().is2xxSuccessful())
-            body.iterator().forEachRemaining(c -> counter.incrementAndGet());
+        if (response.getStatusCode().isError()) {
+            return BaseResponse.<Void>builder()
+                    .statusCode(String.valueOf(HttpStatus.BAD_REQUEST.value()))
+                    .message(String.format("Record %s not found for products", counter))
+                    .build();
+        }
 
+        body.iterator().forEachRemaining(c -> counter.incrementAndGet());
 
         return BaseResponse.<Iterable<Product>>builder()
-                .errorCode(String.valueOf(HttpStatus.BAD_REQUEST.value()))
+                .statusCode(String.valueOf(HttpStatus.OK.value()))
                 .message(String.format("Record found %s for products", counter))
                 .data(body)
                 .build();
@@ -58,7 +63,7 @@ public class OrderService {
     @Builder
     @JsonInclude(Include.NON_NULL)
     public record BaseResponse<T>(
-            String errorCode,
+            String statusCode,
             String message,
             T data) implements Serializable {
     }
