@@ -20,7 +20,7 @@ class OrderController {
     }
 
     @GetMapping
-    public CompletionStage<Iterable<Product>> getAllProducts() {
+    public CompletionStage<OrderService.BaseResponse<Iterable<Product>>> getAllProducts() {
         return CompletableFuture.supplyAsync(this.orderService::getAllProduct);
     }
 }

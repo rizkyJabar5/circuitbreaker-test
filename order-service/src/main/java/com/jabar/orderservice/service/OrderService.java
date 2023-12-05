@@ -1,5 +1,8 @@
 package com.jabar.orderservice.service;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.jabar.orderservice.ControllerAdvisor.ThirdServiceException;
 import com.jabar.orderservice.Product;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.Builder;
@@ -12,15 +15,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 @Slf4j
 public class OrderService {
     public static final String PRODUCT_SERVICE_URL = "http://localhost:9090/api/v1/products";
+    public static final String SERVICE_NAME = "order-service";
 
     private final RestTemplate restTemplate;
 
@@ -28,31 +29,37 @@ public class OrderService {
         this.restTemplate = restTemplate;
     }
 
-    @CircuitBreaker(name = "orderService", fallbackMethod = "onError")
-    public Iterable<Product> getAllProduct() {
+    @CircuitBreaker(name = SERVICE_NAME, fallbackMethod = "onError")
+    public BaseResponse<Iterable<Product>> getAllProduct() {
         ResponseEntity<Iterable<Product>> response = restTemplate.exchange(
                 PRODUCT_SERVICE_URL,
                 HttpMethod.GET,
                 null,
                 new ParameterizedTypeReference<>() {});
 
-        return response.getBody();
-    }
+        var body = response.getBody();
+        var counter = new AtomicInteger(0);
 
-    private BaseResponse<List<Product>> onError(Exception e) {
-        log.info("Error: {}", e.getMessage());
+        if (response.getStatusCode().is2xxSuccessful())
+            body.iterator().forEachRemaining(c -> counter.incrementAndGet());
 
-        return BaseResponse.<List<Product>>builder()
-                .errorCode(String.valueOf(HttpStatus.OK))
-                .message(String.format("Error: %s", e.getMessage()))
-                .data(Collections.emptyList())
+
+        return BaseResponse.<Iterable<Product>>builder()
+                .errorCode(String.valueOf(HttpStatus.BAD_REQUEST.value()))
+                .message(String.format("Record found %s for products", counter))
+                .data(body)
                 .build();
     }
 
+    private BaseResponse<Void> onError(Throwable e) {
+        throw new ThirdServiceException(e.getMessage());
+    }
+
     @Builder
+    @JsonInclude(Include.NON_NULL)
     public record BaseResponse<T>(
             String errorCode,
             String message,
-            T data)  implements Serializable {
+            T data) implements Serializable {
     }
 }

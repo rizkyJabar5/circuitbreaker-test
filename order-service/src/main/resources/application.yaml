@@ -17,12 +17,8 @@ resilience4j:
         waitDurationInOpenState: 5s
         failureRateThreshold: 50
         eventConsumerBufferSize: 10
-        recordExceptions:
-          - java.util.concurrent.TimeoutException
-          - java.io.IOException
-          - java.net.ConnectException
     instances:
-      orderService:
+      order-service:
         base-config: default
 management:
   endpoints:
@@ -33,8 +29,6 @@ management:
     health:
       show-details: always
   health:
-    diskspace:
-      enabled: false
     circuitbreakers:
       enabled: true
   metrics:
