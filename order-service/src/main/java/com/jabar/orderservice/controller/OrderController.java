@@ -2,6 +2,7 @@ package com.jabar.orderservice.controller;
 
 import com.jabar.orderservice.Product;
 import com.jabar.orderservice.service.OrderService;
+import com.jabar.orderservice.service.OrderService.BaseResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,7 +21,7 @@ class OrderController {
     }
 
     @GetMapping
-    public CompletionStage<OrderService.BaseResponse<Iterable<Product>>> getAllProducts() {
+    public CompletionStage<BaseResponse<Iterable<Product>>> getAllProducts() {
         return CompletableFuture.supplyAsync(this.orderService::getAllProduct);
     }
 }

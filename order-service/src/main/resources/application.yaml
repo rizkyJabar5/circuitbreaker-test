@@ -9,14 +9,16 @@ resilience4j:
   circuitbreaker:
     configs:
       default:
+        slidingWindowType: TIME_BASED
         registerHealthIndicator: true
-        slidingWindowSize: 10
+        slidingWindowSize: 5
         minimumNumberOfCalls: 5
         permittedNumberOfCallsInHalfOpenState: 3
         automaticTransitionFromOpenToHalfOpenEnabled: true
-        waitDurationInOpenState: 5s
+        waitDurationInOpenState: 10s
         failureRateThreshold: 50
         eventConsumerBufferSize: 10
+        slowCallDurationThreshold: 3s
     instances:
       order-service:
         base-config: default

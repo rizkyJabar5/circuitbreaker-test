@@ -10,7 +10,7 @@ public class ControllerAdvisor {
     @ExceptionHandler(ThirdServiceException.class)
     OrderService.BaseResponse<Void> thirdAPIException(RuntimeException e) {
         return OrderService.BaseResponse.<Void>builder()
-                .errorCode(String.valueOf(HttpStatus.BAD_REQUEST.value()))
+                .statusCode(String.valueOf(HttpStatus.BAD_REQUEST.value()))
                 .message(String.format("Cannot find product, %s", e.getMessage()))
                 .build();
     }
